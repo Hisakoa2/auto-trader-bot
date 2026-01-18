@@ -220,4 +220,7 @@ print("⏰ Auto-scans every 5 minutes")
 print("📱 Commands: /start, /status, /signal, /scan, /alerts")
 
 # Start bot
-bot.polling(none_stop=True, interval=1)
+
+if __name__ == "__main__":
+    print("🚀 NASDAQ Auto-Trader Started")
+    bot.polling(none_stop=True, interval=1)
