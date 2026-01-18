@@ -245,4 +245,15 @@ print("📱 Commands: /start, /status, /signal, /scan, /alerts")
 
 # Start bot
 if __name__ == "__main__":
+    # Clear any existing webhook
+import telebot.apihelper
+bot.remove_webhook()
+time.sleep(2)
+
+# Set timeout
+telebot.apihelper.SESSION_TIME_TO_LIVE = 5 * 60
+
+# Start with timeout
+bot.polling(none_stop=True, interval=1, timeout=20)
     bot.polling(none_stop=True, interval=1)
+
