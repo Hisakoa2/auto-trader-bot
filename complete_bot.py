@@ -5,6 +5,30 @@ from datetime import datetime, timedelta
 import pytz
 import threading
 
+# ===== FLASK SERVER (FOR RENDER PORT REQUIREMENT) =====
+from flask import Flask
+from threading import Thread
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "✅ NASDAQ Bot is running!"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
+
+def start_flask():
+    t = Thread(target=run_flask)
+    t.daemon = True
+    t.start()
+    print("🌐 Web server started on port 8080")
+
+# Start Flask immediately
+start_flask()
+# ===== END FLASK SERVER =====
+
+# ===== TELEGRAM BOT CODE =====
 TOKEN = "8234060598:AAHoKauET9e9Yam_29CE1qqFArYoEeM1JCE"
 bot = telebot.TeleBot(TOKEN)
 
@@ -220,7 +244,5 @@ print("⏰ Auto-scans every 5 minutes")
 print("📱 Commands: /start, /status, /signal, /scan, /alerts")
 
 # Start bot
-
 if __name__ == "__main__":
-    print("🚀 NASDAQ Auto-Trader Started")
     bot.polling(none_stop=True, interval=1)
