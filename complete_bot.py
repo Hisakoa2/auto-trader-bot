@@ -1,3 +1,25 @@
+# ===== FLASK SERVER (KEEPS RENDER AWAKE) =====
+from flask import Flask
+from threading import Thread
+import os
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "✅ NASDAQ Bot Running 24/7"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
+
+# Start Flask in background
+flask_thread = Thread(target=run_flask)
+flask_thread.daemon = True
+flask_thread.start()
+print("🌐 Flask server started on port 8080")
+# ===== END FLASK SERVER =====
+
+# ===== TELEGRAM BOT =====
 import telebot
 import yfinance as yf
 import time
@@ -5,31 +27,8 @@ from datetime import datetime, timedelta
 import pytz
 import threading
 
-# ===== FLASK SERVER (FOR RENDER PORT REQUIREMENT) =====
-from flask import Flask
-from threading import Thread
-
-app = Flask('')
-
-@app.route('/')
-def home():
-    return "✅ NASDAQ Bot is running!"
-
-def run_flask():
-    app.run(host='0.0.0.0', port=8080)
-
-def start_flask():
-    t = Thread(target=run_flask)
-    t.daemon = True
-    t.start()
-    print("🌐 Web server started on port 8080")
-
-# Start Flask immediately
-start_flask()
-# ===== END FLASK SERVER =====
-
-# ===== TELEGRAM BOT CODE =====
-TOKEN = "8234060598:AAHoKauET9e9Yam_29CE1qqFArYoEeM1JCE"
+# Get token from environment variable (Render) or use hardcoded as fallback
+TOKEN = os.environ.get("TELEGRAM_TOKEN", "8234060598:AAHoKauET9e9Yam_29CE1qqFArYoEeM1JCE")
 bot = telebot.TeleBot(TOKEN)
 
 chat_id = None
@@ -52,8 +51,9 @@ def start(msg):
 /symbols - Available symbols
 
 *Auto-alerts:* Every 5 minutes
-*Market hours:* 9:30 AM - 4:00 PM EST""", parse_mode='Markdown')
-    print(f"Chat ID: {chat_id}")
+*Market hours:* 9:30 AM - 4:00 PM EST
+*Running 24/7 on Render*""", parse_mode='Markdown')
+    print(f"📱 Chat ID registered: {chat_id}")
 
 @bot.message_handler(commands=['status'])
 def status(msg):
@@ -77,7 +77,8 @@ def status(msg):
 *Active features:*
 • Auto-scan every 5 min
 • QQQ, AAPL, TSLA, NVDA, MSFT
-• 1%+ move alerts""".replace('_', '\\_')
+• 1%+ move alerts
+• 24/7 operation""".replace('_', '\\_')
     
     bot.reply_to(msg, status_msg, parse_mode='Markdown')
 
@@ -125,7 +126,7 @@ def signal(msg):
         bot.reply_to(msg, response, parse_mode='Markdown')
         
     except Exception as e:
-        bot.reply_to(msg, f"Error: {str(e)}")
+        bot.reply_to(msg, f"❌ Error: {str(e)[:100]}")
 
 @bot.message_handler(commands=['scan'])
 def scan(msg):
@@ -143,7 +144,7 @@ def scan(msg):
                 results.append(f"{'📈' if change > 0 else '📉'} {symbol}: {change:+.1f}% (${price:.2f})")
         except:
             pass
-        time.sleep(1)
+        time.sleep(0.5)
     
     if results:
         response = f"*Market Movers:*\n\n" + "\n".join(results[:8])
@@ -226,7 +227,7 @@ def auto_scanner():
                 time.sleep(2)  # Rate limiting
                 
         except Exception as e:
-            print(f"Error scanning {symbol}: {e}")
+            print(f"❌ Error scanning {symbol}: {e}")
         time.sleep(1)
 
 # Schedule auto-scans every 5 minutes
@@ -236,24 +237,22 @@ def scanner_loop():
         time.sleep(300)  # 5 minutes
 
 # Start scanner in background
-threading.Thread(target=scanner_loop, daemon=True).start()
+scanner_thread = threading.Thread(target=scanner_loop)
+scanner_thread.daemon = True
+scanner_thread.start()
 
+# ===== START BOT =====
 print("🚀 NASDAQ Auto-Trader Started")
 print("📊 Symbols:", ", ".join(NASDAQ))
-print("⏰ Auto-scans every 5 minutes")
+print("⏰ Auto-scans every 5 minutes (9:30 AM - 4:00 PM EST)")
+print("🌐 Flask server: http://0.0.0.0:8080")
 print("📱 Commands: /start, /status, /signal, /scan, /alerts")
 
-# Start bot
-if __name__ == "__main__":
-    # Clear any existing webhook
-import telebot.apihelper
-bot.remove_webhook()
-time.sleep(2)
+# Clear any old webhooks and start polling
+try:
+    bot.remove_webhook()
+    time.sleep(1)
+except:
+    pass
 
-# Set timeout
-telebot.apihelper.SESSION_TIME_TO_LIVE = 5 * 60
-
-# Start with timeout
 bot.polling(none_stop=True, interval=1, timeout=20)
-    bot.polling(none_stop=True, interval=1)
-
